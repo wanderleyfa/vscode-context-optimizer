@@ -45,7 +45,7 @@ const handler: vscode.ChatRequestHandler = async (
   }
 
   // For optimize/compare/free-form, use the LM to generate recommendations
-  const models = await vscode.lm.selectChatModels({ family: "gpt-4o" });
+  const models = await vscode.lm.selectChatModels({});
   const model = models[0];
 
   if (!model) {

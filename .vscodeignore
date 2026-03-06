@@ -4,3 +4,4 @@ src/
 *.vsix
 tsconfig.json
 esbuild.mjs
+.gitignore

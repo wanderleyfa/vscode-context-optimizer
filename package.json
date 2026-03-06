@@ -3,8 +3,9 @@
   "displayName": "AI Context Optimizer",
   "description": "Audit and optimize AI context files (copilot-instructions, CLAUDE.md, GEMINI.md, etc.) to reduce token consumption.",
   "version": "0.1.0",
-  "publisher": "wanderleyfa",
+  "publisher": "WanderleyFerreiradeAlbuquerque",
   "license": "MIT",
+  "icon": "images/icon.png",
   "repository": {
     "type": "git",
     "url": "https://github.com/wanderleyfa/vscode-context-optimizer"
@@ -24,11 +25,10 @@
     "AI",
     "instructions"
   ],
-  "activationEvents": [],
-  "main": "./dist/extension.js",
-  "extensionDependencies": [
-    "github.copilot-chat"
+  "activationEvents": [
+    "onChatParticipant:context-optimizer.agent"
   ],
+  "main": "./dist/extension.js",
   "contributes": {
     "chatParticipants": [
       {

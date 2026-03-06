@@ -10,7 +10,7 @@ const config = {
   external: ["vscode"],
   format: "cjs",
   platform: "node",
-  target: "node22",
+  target: "node20",
   sourcemap: true,
   minify: !watch,
 };
