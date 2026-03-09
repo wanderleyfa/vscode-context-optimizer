@@ -1,28 +1,43 @@
 import * as vscode from "vscode";
 import { AI_CONTEXT_PATTERNS, classifyFile, type ContextFile } from "./prompts";
 
-export async function discoverContextFiles(): Promise<ContextFile[]> {
-  const results: ContextFile[] = [];
+export async function discoverContextFiles(
+  token?: vscode.CancellationToken,
+): Promise<ContextFile[]> {
   const seen = new Set<string>();
 
-  for (const pattern of AI_CONTEXT_PATTERNS) {
-    const files = await vscode.workspace.findFiles(
-      pattern,
-      "**/node_modules/**",
-      100,
-    );
-    for (const uri of files) {
+  // Run all glob patterns in parallel
+  const allUris = await Promise.all(
+    AI_CONTEXT_PATTERNS.map((pattern) =>
+      vscode.workspace.findFiles(pattern, "**/node_modules/**", 100),
+    ),
+  );
+
+  if (token?.isCancellationRequested) return [];
+
+  // Deduplicate URIs
+  const uniqueUris: vscode.Uri[] = [];
+  for (const uris of allUris) {
+    for (const uri of uris) {
       const rel = vscode.workspace.asRelativePath(uri);
-      if (seen.has(rel)) continue;
-      seen.add(rel);
-
-      const doc = await vscode.workspace.openTextDocument(uri);
-      const lines = doc.lineCount;
-      const classification = classifyFile(rel);
-
-      results.push({ path: rel, lines, ...classification });
+      if (!seen.has(rel)) {
+        seen.add(rel);
+        uniqueUris.push(uri);
+      }
     }
   }
+
+  // Read files in parallel using raw fs instead of openTextDocument
+  const results = await Promise.all(
+    uniqueUris.map(async (uri): Promise<ContextFile> => {
+      const raw = await vscode.workspace.fs.readFile(uri);
+      const content = Buffer.from(raw).toString("utf-8");
+      const lines = content.split("\n").length;
+      const rel = vscode.workspace.asRelativePath(uri);
+      const classification = classifyFile(rel);
+      return { path: rel, lines, content, ...classification };
+    }),
+  );
 
   results.sort((a, b) => {
     const costOrder = { HIGH: 0, MEDIUM: 1, LOW: 2, FREE: 3 };

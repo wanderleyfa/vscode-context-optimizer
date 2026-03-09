@@ -20,6 +20,17 @@ AI assistants (Copilot, Gemini, Claude Code) auto-load context files every sessi
 | CLAUDE.md / .claude/CLAUDE.md | Every Claude Code session | HIGH |
 | MEMORY.md | Every Claude Code session | HIGH |
 | hooks.json | Every matching event | MEDIUM-HIGH |
+| .cursorrules / .cursor/rules/*.mdc | Every Cursor interaction | HIGH |
+| .windsurfrules | Every Windsurf interaction | HIGH |
+| .aider.conf.yml / .aiderignore | Every Aider session | HIGH |
+| .continue/config.json / .continuerules | Every Continue session | HIGH |
+| .clinerules / .cline/settings.json | Every Cline interaction | HIGH |
+| .q/rules/*.md | Every Amazon Q interaction | HIGH |
+| .tabnine.json | Every Tabnine interaction | HIGH |
+| .cody/cody.json | Every Cody interaction | HIGH |
+| .augment/config.json | Every Augment session | HIGH |
+| .sourcery.yaml | Every Sourcery interaction | HIGH |
+| .devin/guidelines.md | Every Devin session | HIGH |
 | .specify/memory/constitution.md | Only via SpecKit agents | LOW |
 
 ## Optimization Strategies
@@ -69,6 +80,7 @@ export const AI_CONTEXT_PATTERNS = [
   ".claude/settings.json",
   "AGENTS.md",
   "MEMORY.md",
+  ".claude/hooks.json",
   // Gemini
   ".gemini/GEMINI.md",
   ".gemini/settings.json",
@@ -76,13 +88,40 @@ export const AI_CONTEXT_PATTERNS = [
   ".cursorrules",
   ".cursor/rules",
   ".cursor/rules/*.mdc",
+  // Windsurf (Codeium)
+  ".windsurfrules",
+  // Aider
+  ".aider.conf.yml",
+  ".aiderignore",
+  // Continue.dev
+  ".continue/config.json",
+  ".continuerules",
+  ".continue/rules/*.md",
+  // Cline
+  ".clinerules",
+  ".cline/settings.json",
+  ".cline/rules/*.md",
+  // Amazon Q Developer
+  ".q/rules/*.md",
+  // Tabnine
+  ".tabnine.json",
+  // Sourcegraph Cody
+  ".cody/cody.json",
+  ".cody/rules/*.md",
+  // Augment
+  ".augment/config.json",
+  ".augment/rules/*.md",
+  // Sourcery
+  ".sourcery.yaml",
+  // Devin
+  ".devin/guidelines.md",
+  ".devin/rules/*.md",
   // SpecKit
   ".specify/memory/constitution.md",
   ".specify/templates/*.md",
   // Other
   "SKILL.md",
   ".github/skills/**/SKILL.md",
-  "**/hooks.json",
   ".claude/hooks.json",
 ];
 
@@ -91,6 +130,7 @@ export type CostLevel = "HIGH" | "MEDIUM" | "LOW" | "FREE";
 export interface ContextFile {
   path: string;
   lines: number;
+  content: string;
   cost: CostLevel;
   tool: string;
   loading: string;
@@ -120,6 +160,40 @@ export function classifyFile(relativePath: string): {
     };
   if (p === ".cursorrules" || p.startsWith(".cursor/rules"))
     return { cost: "HIGH", tool: "Cursor", loading: "Every interaction" };
+  if (p === ".windsurfrules")
+    return { cost: "HIGH", tool: "Windsurf", loading: "Every interaction" };
+  if (p === ".aider.conf.yml")
+    return { cost: "HIGH", tool: "Aider", loading: "Every session" };
+  if (p === ".aiderignore")
+    return { cost: "LOW", tool: "Aider", loading: "File filtering only" };
+  if (
+    p === ".continue/config.json" ||
+    p === ".continuerules" ||
+    p.startsWith(".continue/rules")
+  )
+    return { cost: "HIGH", tool: "Continue", loading: "Every interaction" };
+  if (
+    p === ".clinerules" ||
+    p === ".cline/settings.json" ||
+    p.startsWith(".cline/rules")
+  )
+    return { cost: "HIGH", tool: "Cline", loading: "Every interaction" };
+  if (p.startsWith(".q/rules"))
+    return { cost: "HIGH", tool: "Amazon Q", loading: "Every interaction" };
+  if (p === ".tabnine.json")
+    return { cost: "HIGH", tool: "Tabnine", loading: "Every interaction" };
+  if (p === ".cody/cody.json" || p.startsWith(".cody/rules"))
+    return { cost: "HIGH", tool: "Cody", loading: "Every interaction" };
+  if (p === ".augment/config.json" || p.startsWith(".augment/rules"))
+    return { cost: "HIGH", tool: "Augment", loading: "Every session" };
+  if (p === ".sourcery.yaml")
+    return { cost: "HIGH", tool: "Sourcery", loading: "Every interaction" };
+  if (p.startsWith(".devin/"))
+    return { cost: "HIGH", tool: "Devin", loading: "Every session" };
+  if (p === ".gemini/settings.json")
+    return { cost: "MEDIUM", tool: "Gemini", loading: "Settings only" };
+  if (p === ".claude/settings.json")
+    return { cost: "MEDIUM", tool: "Claude Code", loading: "Settings only" };
 
   // MEDIUM
   if (p === ".github/agents/copilot-instructions.md")

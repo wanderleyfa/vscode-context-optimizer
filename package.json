@@ -23,7 +23,14 @@
     "optimization",
     "tokens",
     "AI",
-    "instructions"
+    "instructions",
+    "claude",
+    "gemini",
+    "cursor",
+    "windsurf",
+    "cline",
+    "aider",
+    "cody"
   ],
   "activationEvents": [
     "onChatParticipant:context-optimizer.agent"

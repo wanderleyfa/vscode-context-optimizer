@@ -26,7 +26,7 @@ const handler: vscode.ChatRequestHandler = async (
 
   // Always run the scanner first
   stream.progress("Scanning workspace for AI context files...");
-  const files = await discoverContextFiles();
+  const files = await discoverContextFiles(token);
 
   if (files.length === 0) {
     stream.markdown(
@@ -39,7 +39,7 @@ const handler: vscode.ChatRequestHandler = async (
   const auditReport = buildAuditReport(files);
 
   if (command === "audit") {
-    // Audit only — just show the report
+    // Audit only — just show the report (no need to keep file contents in memory)
     stream.markdown(auditReport);
     return;
   }
@@ -57,11 +57,34 @@ const handler: vscode.ChatRequestHandler = async (
     return;
   }
 
+  // Include actual file contents for HIGH/MEDIUM files so the model can give specific advice
+  // Truncate content to avoid exceeding LM context window limits
+  const MAX_CONTENT_CHARS = 20000;
+  let charBudget = MAX_CONTENT_CHARS;
+  const contentParts: string[] = [];
+  for (const f of files.filter(
+    (f) => f.cost === "HIGH" || f.cost === "MEDIUM",
+  )) {
+    if (charBudget <= 0) break;
+    const truncated =
+      f.content.length > charBudget
+        ? f.content.slice(0, charBudget) + "\n... (truncated)"
+        : f.content;
+    charBudget -= truncated.length;
+    contentParts.push(
+      `### ${f.path} (${f.lines} lines, ${f.cost})\n\`\`\`\n${truncated}\n\`\`\``,
+    );
+  }
+  const fileContents = contentParts.join("\n\n");
+
   const messages = [
     vscode.LanguageModelChatMessage.User(SYSTEM_PROMPT),
     vscode.LanguageModelChatMessage.User(
       `Here is the audit report for this workspace:\n\n${auditReport}\n\n` +
-        `File contents summary:\n${files.map((f) => `- ${f.path}: ${f.lines} lines (${f.cost})`).join("\n")}\n\n` +
+        `File inventory:\n${files.map((f) => `- ${f.path}: ${f.lines} lines (${f.cost})`).join("\n")}\n\n` +
+        (fileContents
+          ? `File contents (HIGH and MEDIUM cost):\n\n${fileContents}\n\n`
+          : "") +
         getModeInstruction(command, userPrompt),
     ),
   ];
