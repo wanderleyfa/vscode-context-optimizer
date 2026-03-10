@@ -1,4 +1,8 @@
-# AI Context Optimizer
+**🌐 Languages:** [English](#english) | [Português Brasileiro](#pt-br) | [Español](#es)
+
+---
+
+# <a id="english"></a>AI Context Optimizer
 
 > **Privacy & Security:** This extension runs entirely locally. It makes **zero network requests**, does not collect telemetry, does not persist any data outside the VS Code session, and does not access external APIs. File contents are read from the local filesystem via `vscode.workspace.fs` and, when analysis is requested (`/optimize`, `/compare`), are forwarded — truncated to a hard limit — exclusively to the VS Code Language Model API (`vscode.lm`), which routes to whichever model the user has configured. No data leaves the machine through this extension.
 
@@ -111,5 +115,241 @@ Ask anything about your context files and get tailored analysis.
 - GitHub Copilot Chat extension (for the chat participant API)
 
 ## License
+
+[MIT](LICENSE)
+
+---
+
+# <a id="pt-br"></a>🇧🇷 AI Context Optimizer
+
+> **Privacidade & Segurança:** Esta extensão é executada inteiramente localmente. Faz **zero requisições de rede**, não coleta telemetria, não persiste nenhum dado fora da sessão do VS Code e não acessa APIs externas. Os conteúdos dos arquivos são lidos do sistema de arquivos local via `vscode.workspace.fs` e, quando análise é solicitada (`/optimize`, `/compare`), são encaminhados — truncados para um limite máximo — exclusivamente para a API de Modelo de Linguagem do VS Code (`vscode.lm`), que roteia para o modelo que o usuário configurou. Nenhum dado sai da máquina através desta extensão.
+
+## O que faz
+
+AI Context Optimizer é um **VS Code Chat Participant** (`@context-optimizer`) que analisa estaticamente arquivos de contexto de IA em 15+ ferramentas — GitHub Copilot, Claude Code, Gemini, Cursor, Windsurf, Aider, Continue, Cline, Amazon Q, Tabnine, Cody, Augment, Sourcery, Devin e SpecKit. Ele escaneia o workspace em busca de arquivos de instrução, regras e configuração que são auto-carregados por essas ferramentas, classifica cada um por **frequência de carregamento** e **custo de token** (HIGH / MEDIUM / LOW / FREE), e produz um relatório de auditoria com contagens de linhas. Para análise aprofundada, encaminha o relatório e conteúdos dos arquivos (truncados) para o modelo de linguagem configurado do usuário para gerar recomendações específicas de otimização arquivo por arquivo.
+
+## O Problema
+
+Toda sessão de codificação alimentada por IA começa carregando arquivos de contexto (`copilot-instructions.md`, `CLAUDE.md`, `GEMINI.md`, `.cursorrules`, etc.). Se esses arquivos estão inchados, duplicados ou mal estruturados, você está pagando tokens extras em **toda e qualquer interação** — antes mesmo de fazer uma pergunta.
+
+## Início Rápido
+
+> **1.** Abra o painel Copilot Chat (`Ctrl+Shift+I` / `⌘⇧I`)
+>
+> **2.** Digite `@context-optimizer` e pressione Enter
+>
+> **3.** A extensão escaneia seu workspace e retorna um relatório de auditoria instantaneamente
+
+### `/audit` — Veja o Que Você Está Gastando
+
+```
+@context-optimizer /audit
+```
+
+Retorna um inventário completo de todos os arquivos de contexto de IA em seu workspace, classificados por nível de custo com contagens de linhas. **Somente leitura** — nada é alterado.
+
+### `/optimize` — Obtenha um Plano de Correção
+
+```
+@context-optimizer /optimize
+```
+
+Analisa cada arquivo de custo HIGH e gera **recomendações específicas**: quais seções extrair em arquivos `.instructions.md` escopo, o que desduplicar e como reestruturar para tokens auto-carregados mínimos.
+
+### `/compare` — Visualize as Economias
+
+```
+@context-optimizer /compare
+```
+
+Mostra uma **projeção antes/depois** com contagens de linhas e percentuais de redução — sem tocar em nenhum arquivo. Analise o plano antes de se comprometer com as alterações.
+
+### Perguntas em Formato Livre
+
+```
+@context-optimizer por que meu CLAUDE.md é tão caro?
+@context-optimizer como posso reduzir copilot-instructions para menos de 60 linhas?
+```
+
+Faça qualquer pergunta sobre seus arquivos de contexto e obtenha análise personalizada.
+
+## Arquivos Suportados
+
+| Ferramenta           | Arquivos Detectados                                                      |
+| -------------------- | ------------------------------------------------------------------------ |
+| **GitHub Copilot**   | `copilot-instructions.md`, `.instructions.md`, `.agent.md`, `.prompt.md` |
+| **Claude Code**      | `CLAUDE.md`, `AGENTS.md`, `MEMORY.md`, `hooks.json`                      |
+| **Gemini**           | `GEMINI.md`, `settings.json`                                             |
+| **Cursor**           | `.cursorrules`, `.cursor/rules/*.mdc`                                    |
+| **Windsurf**         | `.windsurfrules`                                                         |
+| **Aider**            | `.aider.conf.yml`, `.aiderignore`                                        |
+| **Continue.dev**     | `.continuerules`, `.continue/config.json`, `.continue/rules/*.md`        |
+| **Cline**            | `.clinerules`, `.cline/settings.json`, `.cline/rules/*.md`               |
+| **Amazon Q**         | `.q/rules/*.md`                                                          |
+| **Tabnine**          | `.tabnine.json`                                                          |
+| **Sourcegraph Cody** | `.cody/cody.json`, `.cody/rules/*.md`                                    |
+| **Augment**          | `.augment/config.json`, `.augment/rules/*.md`                            |
+| **Sourcery**         | `.sourcery.yaml`                                                         |
+| **Devin**            | `.devin/guidelines.md`, `.devin/rules/*.md`                              |
+| **SpecKit**          | `constitution.md`, templates                                             |
+
+## Classificação de Custo
+
+| Nível         | Significado                | Impacto                                          |
+| ------------- | -------------------------- | ------------------------------------------------ |
+| 🔴 **HIGH**   | Carregado a cada interação | Tokens gastos em cada mensagem                   |
+| 🟡 **MEDIUM** | Carregado condicionalmente | Tokens gastos em modos específicos               |
+| 🟢 **LOW**    | Escopo com `applyTo`       | Tokens gastos apenas em arquivos correspondentes |
+| ⚪ **FREE**   | Sob demanda apenas         | Zero custo até ser explicitamente invocado       |
+
+## Comandos
+
+| Comando                        | O que faz                                                                         |
+| ------------------------------ | --------------------------------------------------------------------------------- |
+| `@context-optimizer`           | Análise em formato livre — faça qualquer pergunta sobre seus arquivos de contexto |
+| `@context-optimizer /audit`    | Relatório de auditoria somente leitura com contagens de linhas e níveis de custo  |
+| `@context-optimizer /optimize` | Plano de otimização detalhado arquivo por arquivo                                 |
+| `@context-optimizer /compare`  | Projeção antes/depois sem aplicar alterações                                      |
+
+## Exemplo de Saída
+
+```
+## Relatório de Auditoria de Contexto de IA
+
+| Métrica                         | Linhas |
+|--------------------------------|--------|
+| AUTO-CARREGADO (a cada sessão) | 142    |
+| Médio (condicional)            | 28     |
+| Escopo (applyTo)               | 0      |
+| Lazy (sob demanda)             | 45     |
+| Total                          | 215    |
+
+⚠️ Contexto auto-carregado (142 linhas) excede o alvo de ~60-80 linhas.
+```
+
+## Requisitos
+
+- VS Code 1.100+
+- Extensão GitHub Copilot Chat (para a API do chat participant)
+
+## Licença
+
+[MIT](LICENSE)
+
+---
+
+# <a id="es"></a>🇪🇸 AI Context Optimizer
+
+> **Privacidad y Seguridad:** Esta extensión se ejecuta completamente localmente. Realiza **cero solicitudes de red**, no recopila telemetría, no persiste ningún dato fuera de la sesión de VS Code y no accede a APIs externas. Los contenidos de los archivos se leen del sistema de archivos local a través de `vscode.workspace.fs` y, cuando se solicita análisis (`/optimize`, `/compare`), se reenvían — truncados a un límite máximo — exclusivamente a la API del Modelo de Lenguaje de VS Code (`vscode.lm`), que enruta al modelo que el usuario ha configurado. Ningún dato sale de la máquina a través de esta extensión.
+
+## Qué hace
+
+AI Context Optimizer es un **Participante de Chat de VS Code** (`@context-optimizer`) que analiza estáticamente archivos de contexto de IA en 15+ herramientas — GitHub Copilot, Claude Code, Gemini, Cursor, Windsurf, Aider, Continue, Cline, Amazon Q, Tabnine, Cody, Augment, Sourcery, Devin y SpecKit. Escanea el workspace en busca de archivos de instrucción, reglas y configuración que se cargan automáticamente en estas herramientas, clasifica cada uno por **frecuencia de carga** y **costo de tokens** (HIGH / MEDIUM / LOW / FREE), y produce un informe de auditoría con recuentos de líneas. Para un análisis más profundo, reenvía el informe y contenidos de archivos (truncados) al modelo de lenguaje configurado del usuario para generar recomendaciones específicas de optimización archivo por archivo.
+
+## El Problema
+
+Cada sesión de codificación impulsada por IA comienza cargando archivos de contexto (`copilot-instructions.md`, `CLAUDE.md`, `GEMINI.md`, `.cursorrules`, etc.). Si estos archivos están inflados, duplicados o mal estructurados, está pagando tokens adicionales en **cada interacción** — antes incluso de hacer una pregunta.
+
+## Inicio Rápido
+
+> **1.** Abra el panel de Chat de Copilot (`Ctrl+Shift+I` / `⌘⇧I`)
+>
+> **2.** Escriba `@context-optimizer` y presione Enter
+>
+> **3.** La extensión escanea su workspace y devuelve un informe de auditoría al instante
+
+### `/audit` — Vea lo que está Gastando
+
+```
+@context-optimizer /audit
+```
+
+Devuelve un inventario completo de todos los archivos de contexto de IA en su workspace, clasificados por nivel de costo con recuentos de líneas. **Solo lectura** — nada se cambia.
+
+### `/optimize` — Obtenga un Plan de Corrección
+
+```
+@context-optimizer /optimize
+```
+
+Analiza cada archivo de costo HIGH y genera **recomendaciones específicas**: qué secciones extraer en archivos `.instructions.md` con alcance, qué desduplicar y cómo reestructurar para tokens cargados automáticamente mínimos.
+
+### `/compare` — Visualice los Ahorros
+
+```
+@context-optimizer /compare
+```
+
+Muestra una **proyección antes/después** con recuentos de líneas y porcentajes de reducción — sin tocar ningún archivo. Revise el plan antes de comprometerse con los cambios.
+
+### Preguntas de Forma Libre
+
+```
+@context-optimizer ¿por qué mi CLAUDE.md es tan caro?
+@context-optimizer ¿cómo puedo reducir copilot-instructions a menos de 60 líneas?
+```
+
+Haga cualquier pregunta sobre sus archivos de contexto y obtenga análisis personalizado.
+
+## Archivos Compatibles
+
+| Herramienta          | Archivos Detectados                                                      |
+| -------------------- | ------------------------------------------------------------------------ |
+| **GitHub Copilot**   | `copilot-instructions.md`, `.instructions.md`, `.agent.md`, `.prompt.md` |
+| **Claude Code**      | `CLAUDE.md`, `AGENTS.md`, `MEMORY.md`, `hooks.json`                      |
+| **Gemini**           | `GEMINI.md`, `settings.json`                                             |
+| **Cursor**           | `.cursorrules`, `.cursor/rules/*.mdc`                                    |
+| **Windsurf**         | `.windsurfrules`                                                         |
+| **Aider**            | `.aider.conf.yml`, `.aiderignore`                                        |
+| **Continue.dev**     | `.continuerules`, `.continue/config.json`, `.continue/rules/*.md`        |
+| **Cline**            | `.clinerules`, `.cline/settings.json`, `.cline/rules/*.md`               |
+| **Amazon Q**         | `.q/rules/*.md`                                                          |
+| **Tabnine**          | `.tabnine.json`                                                          |
+| **Sourcegraph Cody** | `.cody/cody.json`, `.cody/rules/*.md`                                    |
+| **Augment**          | `.augment/config.json`, `.augment/rules/*.md`                            |
+| **Sourcery**         | `.sourcery.yaml`                                                         |
+| **Devin**            | `.devin/guidelines.md`, `.devin/rules/*.md`                              |
+| **SpecKit**          | `constitution.md`, templates                                             |
+
+## Clasificación de Costos
+
+| Nivel         | Significado                 | Impacto                                       |
+| ------------- | --------------------------- | --------------------------------------------- |
+| 🔴 **HIGH**   | Cargado en cada interacción | Tokens gastados en cada mensaje               |
+| 🟡 **MEDIUM** | Cargado condicionalmente    | Tokens gastados en modos específicos          |
+| 🟢 **LOW**    | Alcance con `applyTo`       | Tokens gastados solo en archivos coincidentes |
+| ⚪ **FREE**   | Solo bajo demanda           | Cero costo hasta ser invocado explícitamente  |
+
+## Comandos
+
+| Comando                        | Qué hace                                                                         |
+| ------------------------------ | -------------------------------------------------------------------------------- |
+| `@context-optimizer`           | Análisis de forma libre — pregunte cualquier cosa sobre sus archivos de contexto |
+| `@context-optimizer /audit`    | Informe de auditoría de solo lectura con recuentos de líneas                     |
+| `@context-optimizer /optimize` | Plan de optimización detallado archivo por archivo                               |
+| `@context-optimizer /compare`  | Proyección antes/después sin aplicar cambios                                     |
+
+## Ejemplo de Salida
+
+```
+## Informe de Auditoría de Contexto de IA
+
+| Métrica                        | Líneas |
+|--------------------------------|--------|
+| CARGADO AUTOMÁTICAMENTE (cada sesión) | 142 |
+| Medio (condicional)            | 28     |
+| Alcance (applyTo)              | 0      |
+| Lazy (bajo demanda)            | 45     |
+| Total                          | 215    |
+
+⚠️ El contexto cargado automáticamente (142 líneas) excede el destino de ~60-80 líneas.
+```
+
+## Requisitos
+
+- VS Code 1.100+
+- Extensión GitHub Copilot Chat (para la API del participante de chat)
+
+## Licencia
 
 [MIT](LICENSE)

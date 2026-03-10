@@ -2,7 +2,7 @@
   "name": "context-optimizer",
   "displayName": "AI Context Optimizer",
   "description": "Audit and optimize AI context files (copilot-instructions, CLAUDE.md, GEMINI.md, etc.) to reduce token consumption.",
-  "version": "0.1.0",
+  "version": "0.1.2",
   "publisher": "WanderleyFerreiradeAlbuquerque",
   "license": "MIT",
   "icon": "images/icon.png",
