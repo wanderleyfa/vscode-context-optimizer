@@ -86,27 +86,49 @@ Ask anything about your context files and get tailored analysis.
 
 ## Commands
 
-| Command                        | What it does                                               |
-| ------------------------------ | ---------------------------------------------------------- |
-| `@context-optimizer`           | Free-form analysis — ask anything about your context files |
-| `@context-optimizer /audit`    | Read-only audit report with line counts and cost levels    |
-| `@context-optimizer /optimize` | Detailed file-by-file optimization plan                    |
-| `@context-optimizer /compare`  | Before/after projection without applying changes           |
+| Command                        | What it does                                                       |
+| ------------------------------ | ------------------------------------------------------------------ |
+| `@context-optimizer`           | Scan & generate optimized files directly                           |
+| `@context-optimizer /audit`    | Read-only audit report with line counts, token estimates and costs |
+| `@context-optimizer /optimize` | Detailed file-by-file optimization plan                            |
+| `@context-optimizer /compare`  | Before/after projection without applying changes                   |
+| `@context-optimizer /init`     | Scaffold context files from your project metadata                  |
+| `@context-optimizer /help`     | Show available commands and usage                                  |
+
+## Settings
+
+| Setting                                    | Default | Description                                                                         |
+| ------------------------------------------ | ------- | ----------------------------------------------------------------------------------- |
+| `contextOptimizer.autoLoadedLineThreshold` | `80`    | Max recommended lines for auto-loaded files. Files exceeding this trigger warnings. |
+
+## Features
+
+- **Token estimation** — every file shows approximate token cost (~30 tokens/line)
+- **Content similarity detection** — flags HIGH-cost files with >40% overlap (Dice coefficient)
+- **Clickable file links** — audit report includes anchors to open files directly
+- **Project scaffolding** — `/init` reads `package.json`, `pyproject.toml`, `Cargo.toml`, or `go.mod` and generates a starter `copilot-instructions.md`
+- **Configurable threshold** — adjust the auto-loaded line budget via settings
 
 ## Example Output
 
 ```
 ## AI Context Audit Report
 
-| Metric                         | Lines |
-|--------------------------------|-------|
-| AUTO-LOADED (every session)    | 142   |
-| Medium (conditional)           | 28    |
-| Scoped (applyTo)               | 0     |
-| Lazy (on-demand)               | 45    |
-| Total                          | 215   |
+### Summary
+| Metric                         | Lines | ~Tokens |
+|--------------------------------|-------|--------|
+| AUTO-LOADED (every session)    | 142   | ~4,260 |
+| Medium (conditional)           | 28    | ~840   |
+| Scoped (applyTo)               | 0     | ~0     |
+| Lazy (on-demand)               | 45    | ~1,350 |
+| Total                          | 215   | ~6,450 |
 
-⚠️ Auto-loaded context (142 lines) exceeds the ~60-80 line target.
+⚠️ Auto-loaded context (142 lines, ~4,260 tokens) exceeds the ~80-line target.
+
+### 🔁 Content Similarity
+| File A                       | File B     | Similarity |
+|------------------------------|------------|------------|
+| copilot-instructions.md      | CLAUDE.md  | 67%        |
 ```
 
 ## Requirements
@@ -204,27 +226,49 @@ Faça qualquer pergunta sobre seus arquivos de contexto e obtenha análise perso
 
 ## Comandos
 
-| Comando                        | O que faz                                                                         |
-| ------------------------------ | --------------------------------------------------------------------------------- |
-| `@context-optimizer`           | Análise em formato livre — faça qualquer pergunta sobre seus arquivos de contexto |
-| `@context-optimizer /audit`    | Relatório de auditoria somente leitura com contagens de linhas e níveis de custo  |
-| `@context-optimizer /optimize` | Plano de otimização detalhado arquivo por arquivo                                 |
-| `@context-optimizer /compare`  | Projeção antes/depois sem aplicar alterações                                      |
+| Comando                        | O que faz                                                                      |
+| ------------------------------ | ------------------------------------------------------------------------------ |
+| `@context-optimizer`           | Escaneia e gera arquivos otimizados diretamente                                |
+| `@context-optimizer /audit`    | Relatório de auditoria com contagens de linhas, estimativas de tokens e custos |
+| `@context-optimizer /optimize` | Plano de otimização detalhado arquivo por arquivo                              |
+| `@context-optimizer /compare`  | Projeção antes/depois sem aplicar alterações                                   |
+| `@context-optimizer /init`     | Cria arquivos de contexto a partir dos metadados do projeto                    |
+| `@context-optimizer /help`     | Mostra comandos disponíveis e uso                                              |
+
+## Configurações
+
+| Configuração                               | Padrão | Descrição                                                                                         |
+| ------------------------------------------ | ------ | ------------------------------------------------------------------------------------------------- |
+| `contextOptimizer.autoLoadedLineThreshold` | `80`   | Máximo recomendado de linhas para arquivos auto-carregados. Arquivos que excedem disparam avisos. |
+
+## Funcionalidades
+
+- **Estimativa de tokens** — cada arquivo mostra o custo aproximado em tokens (~30 tokens/linha)
+- **Detecção de similaridade** — identifica arquivos HIGH com >40% de sobreposição (coeficiente Dice)
+- **Links clicáveis** — relatório de auditoria inclui âncoras para abrir arquivos diretamente
+- **Scaffolding de projeto** — `/init` lê `package.json`, `pyproject.toml`, `Cargo.toml` ou `go.mod` e gera um `copilot-instructions.md` inicial
+- **Limite configurável** — ajuste o orçamento de linhas auto-carregadas via configurações
 
 ## Exemplo de Saída
 
 ```
 ## Relatório de Auditoria de Contexto de IA
 
-| Métrica                         | Linhas |
-|--------------------------------|--------|
-| AUTO-CARREGADO (a cada sessão) | 142    |
-| Médio (condicional)            | 28     |
-| Escopo (applyTo)               | 0      |
-| Lazy (sob demanda)             | 45     |
-| Total                          | 215    |
+### Resumo
+| Métrica                          | Linhas | ~Tokens |
+|----------------------------------|--------|--------|
+| AUTO-CARREGADO (a cada sessão)   | 142    | ~4.260 |
+| Médio (condicional)              | 28     | ~840   |
+| Escopo (applyTo)                 | 0      | ~0     |
+| Lazy (sob demanda)               | 45     | ~1.350 |
+| Total                            | 215    | ~6.450 |
 
-⚠️ Contexto auto-carregado (142 linhas) excede o alvo de ~60-80 linhas.
+⚠️ Contexto auto-carregado (142 linhas, ~4.260 tokens) excede o alvo de ~80 linhas.
+
+### 🔁 Similaridade de Conteúdo
+| Arquivo A                    | Arquivo B  | Similaridade |
+|------------------------------|------------|-------------|
+| copilot-instructions.md      | CLAUDE.md  | 67%          |
 ```
 
 ## Requisitos
@@ -322,27 +366,49 @@ Haga cualquier pregunta sobre sus archivos de contexto y obtenga análisis perso
 
 ## Comandos
 
-| Comando                        | Qué hace                                                                         |
-| ------------------------------ | -------------------------------------------------------------------------------- |
-| `@context-optimizer`           | Análisis de forma libre — pregunte cualquier cosa sobre sus archivos de contexto |
-| `@context-optimizer /audit`    | Informe de auditoría de solo lectura con recuentos de líneas                     |
-| `@context-optimizer /optimize` | Plan de optimización detallado archivo por archivo                               |
-| `@context-optimizer /compare`  | Proyección antes/después sin aplicar cambios                                     |
+| Comando                        | Qué hace                                                                      |
+| ------------------------------ | ----------------------------------------------------------------------------- |
+| `@context-optimizer`           | Escanea y genera archivos optimizados directamente                            |
+| `@context-optimizer /audit`    | Informe de auditoría con recuentos de líneas, estimaciones de tokens y costos |
+| `@context-optimizer /optimize` | Plan de optimización detallado archivo por archivo                            |
+| `@context-optimizer /compare`  | Proyección antes/después sin aplicar cambios                                  |
+| `@context-optimizer /init`     | Crea archivos de contexto desde los metadatos del proyecto                    |
+| `@context-optimizer /help`     | Muestra los comandos disponibles y su uso                                     |
+
+## Configuración
+
+| Configuración                              | Predeterminado | Descripción                                                                                                         |
+| ------------------------------------------ | -------------- | ------------------------------------------------------------------------------------------------------------------- |
+| `contextOptimizer.autoLoadedLineThreshold` | `80`           | Líneas máximas recomendadas para archivos cargados automáticamente. Los archivos que excedan disparan advertencias. |
+
+## Características
+
+- **Estimación de tokens** — cada archivo muestra el costo aproximado en tokens (~30 tokens/línea)
+- **Detección de similitud** — identifica archivos HIGH con >40% de superposición (coeficiente Dice)
+- **Enlaces clicables** — el informe de auditoría incluye anclas para abrir archivos directamente
+- **Scaffolding de proyecto** — `/init` lee `package.json`, `pyproject.toml`, `Cargo.toml` o `go.mod` y genera un `copilot-instructions.md` inicial
+- **Umbral configurable** — ajuste el presupuesto de líneas autocargadas en la configuración
 
 ## Ejemplo de Salida
 
 ```
 ## Informe de Auditoría de Contexto de IA
 
-| Métrica                        | Líneas |
-|--------------------------------|--------|
-| CARGADO AUTOMÁTICAMENTE (cada sesión) | 142 |
-| Medio (condicional)            | 28     |
-| Alcance (applyTo)              | 0      |
-| Lazy (bajo demanda)            | 45     |
-| Total                          | 215    |
+### Resumen
+| Métrica                               | Líneas | ~Tokens |
+|---------------------------------------|--------|--------|
+| CARGADO AUTOMÁTICAMENTE (cada sesión) | 142    | ~4,260 |
+| Medio (condicional)                   | 28     | ~840   |
+| Alcance (applyTo)                     | 0      | ~0     |
+| Lazy (bajo demanda)                   | 45     | ~1,350 |
+| Total                                 | 215    | ~6,450 |
 
-⚠️ El contexto cargado automáticamente (142 líneas) excede el destino de ~60-80 líneas.
+⚠️ El contexto autocargado (142 líneas, ~4,260 tokens) excede el límite de ~80 líneas.
+
+### 🔁 Similitud de Contenido
+| Archivo A                  | Archivo B  | Similitud |
+|----------------------------|------------|----------|
+| copilot-instructions.md    | CLAUDE.md  | 67%       |
 ```
 
 ## Requisitos

@@ -3,3 +3,10 @@ dist/
 *.vsix
 .vscode-test/
 .DS_Store
+documents/
+docs/
+*.log
+*.tmp
+*.bak
+*.swp
+*.swo

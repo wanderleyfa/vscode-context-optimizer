@@ -122,7 +122,6 @@ export const AI_CONTEXT_PATTERNS = [
   // Other
   "SKILL.md",
   ".github/skills/**/SKILL.md",
-  ".claude/hooks.json",
 ];
 
 export type CostLevel = "HIGH" | "MEDIUM" | "LOW" | "FREE";

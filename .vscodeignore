@@ -1,7 +1,14 @@
 .vscode-test/
+.vscode/
+.github/
 node_modules/
 src/
+docs/
+documents/
+images/screenshot*.png
 *.vsix
 tsconfig.json
 esbuild.mjs
 .gitignore
+CHANGELOG.md
+**/*.test.ts
