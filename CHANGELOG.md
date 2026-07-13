@@ -1,5 +1,22 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- `/apply` command with two-step flow: preview diffs first, then apply only after explicit confirmation (`/apply confirm`)
+- New apply utilities (`src/apply.ts`) and diff preview engine (`src/diff.ts`)
+- New tests for apply plan parsing, confirmation flow, and diff generation
+- Restored GitHub Actions CI workflow (`.github/workflows/ci.yml`) for lint + test + compile on Node 20/22
+- Scanner scalability settings:
+  - `contextOptimizer.maxFilesPerPattern`
+  - `contextOptimizer.excludeGlob`
+
+### Changed
+
+- Token estimation now uses content-aware heuristic instead of fixed tokens-per-line multiplier
+- `/help` and README command/settings docs updated to include `/apply` and scan scaling settings
+
 ## [0.3.0] - 2025-06-23
 
 ### Added

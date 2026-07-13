@@ -1,9 +1,29 @@
 import type { ContextFile } from "./prompts";
 
-const TOKENS_PER_LINE = 30;
+const CHARS_PER_TOKEN = 4;
 
-export function estimateTokens(lines: number): number {
-  return lines * TOKENS_PER_LINE;
+export function estimateTokens(lines: number, content?: string): number {
+  if (!content) {
+    return Math.round(lines * 25);
+  }
+
+  const normalized = content.replace(/\r\n/g, "\n");
+  const charCount = normalized.length;
+  if (charCount === 0) return 0;
+
+  const lineCount = normalized.split("\n").length;
+  const wordCount = normalized.trim().length
+    ? normalized.trim().split(/\s+/).length
+    : 0;
+  const punctuationCount = (normalized.match(/[{}[\]()`*#<>|:_-]/g) || [])
+    .length;
+
+  const base = Math.ceil(charCount / CHARS_PER_TOKEN);
+  const lineOverhead = Math.ceil(lineCount * 0.4);
+  const wordOverhead = Math.ceil(wordCount * 0.08);
+  const punctuationOverhead = Math.ceil(punctuationCount * 0.12);
+
+  return base + lineOverhead + wordOverhead + punctuationOverhead;
 }
 
 /** Compute bigram set for a string (lowercased, whitespace-normalized). */
@@ -53,32 +73,52 @@ export function findDuplicates(
 }
 
 export function buildAuditReport(files: ContextFile[], threshold = 80): string {
+  const tokenByPath = new Map(
+    files.map((f) => [f.path, estimateTokens(f.lines, f.content)]),
+  );
+
   const totalAutoLoaded = files
     .filter((f) => f.cost === "HIGH")
     .reduce((sum, f) => sum + f.lines, 0);
+  const totalAutoLoadedTokens = files
+    .filter((f) => f.cost === "HIGH")
+    .reduce((sum, f) => sum + (tokenByPath.get(f.path) || 0), 0);
 
   const totalMedium = files
     .filter((f) => f.cost === "MEDIUM")
     .reduce((sum, f) => sum + f.lines, 0);
+  const totalMediumTokens = files
+    .filter((f) => f.cost === "MEDIUM")
+    .reduce((sum, f) => sum + (tokenByPath.get(f.path) || 0), 0);
 
   const totalScoped = files
     .filter((f) => f.cost === "LOW")
     .reduce((sum, f) => sum + f.lines, 0);
+  const totalScopedTokens = files
+    .filter((f) => f.cost === "LOW")
+    .reduce((sum, f) => sum + (tokenByPath.get(f.path) || 0), 0);
 
   const totalLazy = files
     .filter((f) => f.cost === "FREE")
     .reduce((sum, f) => sum + f.lines, 0);
+  const totalLazyTokens = files
+    .filter((f) => f.cost === "FREE")
+    .reduce((sum, f) => sum + (tokenByPath.get(f.path) || 0), 0);
 
   const totalAll = files.reduce((sum, f) => sum + f.lines, 0);
+  const totalAllTokens = files.reduce(
+    (sum, f) => sum + (tokenByPath.get(f.path) || 0),
+    0,
+  );
 
   let report = `## AI Context Audit Report\n\n`;
   report += `### Summary\n`;
   report += `| Metric | Lines | ~Tokens |\n|---|---|---|\n`;
-  report += `| **AUTO-LOADED (every session)** | **${totalAutoLoaded}** | **~${estimateTokens(totalAutoLoaded).toLocaleString()}** |\n`;
-  report += `| Medium (conditional) | ${totalMedium} | ~${estimateTokens(totalMedium).toLocaleString()} |\n`;
-  report += `| Scoped (applyTo) | ${totalScoped} | ~${estimateTokens(totalScoped).toLocaleString()} |\n`;
-  report += `| Lazy (on-demand) | ${totalLazy} | ~${estimateTokens(totalLazy).toLocaleString()} |\n`;
-  report += `| **Total** | **${totalAll}** | **~${estimateTokens(totalAll).toLocaleString()}** |\n\n`;
+  report += `| **AUTO-LOADED (every session)** | **${totalAutoLoaded}** | **~${totalAutoLoadedTokens.toLocaleString()}** |\n`;
+  report += `| Medium (conditional) | ${totalMedium} | ~${totalMediumTokens.toLocaleString()} |\n`;
+  report += `| Scoped (applyTo) | ${totalScoped} | ~${totalScopedTokens.toLocaleString()} |\n`;
+  report += `| Lazy (on-demand) | ${totalLazy} | ~${totalLazyTokens.toLocaleString()} |\n`;
+  report += `| **Total** | **${totalAll}** | **~${totalAllTokens.toLocaleString()}** |\n\n`;
 
   report += `### Inventory\n\n`;
   report += `| File | Lines | ~Tokens | Cost | Tool | Loading |\n`;
@@ -92,12 +132,12 @@ export function buildAuditReport(files: ContextFile[], threshold = 80): string {
           : f.cost === "LOW"
             ? "🟢"
             : "⚪";
-    report += `| ${f.path} | ${f.lines} | ~${estimateTokens(f.lines).toLocaleString()} | ${icon} ${f.cost} | ${f.tool} | ${f.loading} |\n`;
+    report += `| ${f.path} | ${f.lines} | ~${(tokenByPath.get(f.path) || 0).toLocaleString()} | ${icon} ${f.cost} | ${f.tool} | ${f.loading} |\n`;
   }
 
   if (totalAutoLoaded > threshold) {
     report += `\n### ⚠️ Recommendations\n\n`;
-    report += `1. **Compact global file** — ${totalAutoLoaded} auto-loaded lines (~${estimateTokens(totalAutoLoaded).toLocaleString()} tokens) exceeds the ~${threshold}-line target. Move details to scoped \`.instructions.md\` files.\n`;
+    report += `1. **Compact global file** — ${totalAutoLoaded} auto-loaded lines (~${totalAutoLoadedTokens.toLocaleString()} tokens) exceeds the ~${threshold}-line target. Move details to scoped \`.instructions.md\` files.\n`;
 
     const highFiles = files.filter((f) => f.cost === "HIGH");
     if (highFiles.length > 1) {
@@ -115,7 +155,7 @@ export function buildAuditReport(files: ContextFile[], threshold = 80): string {
     }
   } else {
     report += `\n### ✅ Context is well-optimized\n\n`;
-    report += `Auto-loaded context (${totalAutoLoaded} lines, ~${estimateTokens(totalAutoLoaded).toLocaleString()} tokens) is within the ~${threshold}-line target.\n`;
+    report += `Auto-loaded context (${totalAutoLoaded} lines, ~${totalAutoLoadedTokens.toLocaleString()} tokens) is within the ~${threshold}-line target.\n`;
   }
 
   return report;

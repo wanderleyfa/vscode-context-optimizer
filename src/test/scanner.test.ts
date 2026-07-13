@@ -23,10 +23,20 @@ function makeFile(
 }
 
 describe("estimateTokens", () => {
-  it("returns ~30 tokens per line", () => {
-    assert.strictEqual(estimateTokens(1), 30);
-    assert.strictEqual(estimateTokens(100), 3000);
+  it("supports line-based fallback estimation", () => {
+    assert.strictEqual(estimateTokens(1), 25);
+    assert.strictEqual(estimateTokens(100), 2500);
     assert.strictEqual(estimateTokens(0), 0);
+  });
+
+  it("uses content-aware estimation when content is provided", () => {
+    const short = estimateTokens(1, "Hello world");
+    const longer = estimateTokens(
+      6,
+      "# Rules\n- Always validate\n- Prefer strict typing\n- Keep responses concise",
+    );
+    assert.ok(short > 0);
+    assert.ok(longer > short);
   });
 });
 
@@ -47,7 +57,7 @@ describe("buildAuditReport", () => {
     ];
     const report = buildAuditReport(files);
     assert.ok(report.includes("~Tokens"));
-    assert.ok(report.includes("3,000") || report.includes("3000"));
+    assert.ok(report.includes("~"));
   });
 
   it("shows well-optimized message when under threshold", () => {

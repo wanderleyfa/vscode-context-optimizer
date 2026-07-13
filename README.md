@@ -46,6 +46,15 @@ Analyzes each HIGH-cost file and generates **specific recommendations**: which s
 
 Shows a **before/after projection** with line counts and reduction percentages — without touching any file. Review the plan before committing to changes.
 
+### `/apply` — Preview Diffs and Apply Safely
+
+```
+@context-optimizer /apply
+@context-optimizer /apply confirm
+```
+
+Generates an executable optimization plan, shows per-file diffs, and only writes files after explicit confirmation.
+
 ### Free-form Questions
 
 ```
@@ -92,6 +101,7 @@ Ask anything about your context files and get tailored analysis.
 | `@context-optimizer /audit`    | Read-only audit report with line counts, token estimates and costs |
 | `@context-optimizer /optimize` | Detailed file-by-file optimization plan                            |
 | `@context-optimizer /compare`  | Before/after projection without applying changes                   |
+| `@context-optimizer /apply`    | Show diffs and apply optimized files with explicit confirmation    |
 | `@context-optimizer /init`     | Scaffold context files from your project metadata                  |
 | `@context-optimizer /help`     | Show available commands and usage                                  |
 
@@ -100,12 +110,15 @@ Ask anything about your context files and get tailored analysis.
 | Setting                                    | Default | Description                                                                         |
 | ------------------------------------------ | ------- | ----------------------------------------------------------------------------------- |
 | `contextOptimizer.autoLoadedLineThreshold` | `80`    | Max recommended lines for auto-loaded files. Files exceeding this trigger warnings. |
+| `contextOptimizer.maxFilesPerPattern`      | `1000`  | Max files matched by each scan pattern. Increase for large monorepos.              |
+| `contextOptimizer.excludeGlob`             | `**/{node_modules,dist,build,.git,.next,.turbo,.pnpm-store}/**` | Glob used to exclude directories from scan. |
 
 ## Features
 
-- **Token estimation** — every file shows approximate token cost (~30 tokens/line)
+- **Content-aware token estimation** — token projection uses file content instead of fixed per-line multiplier
 - **Content similarity detection** — flags HIGH-cost files with >40% overlap (Dice coefficient)
 - **Clickable file links** — audit report includes anchors to open files directly
+- **Safe apply mode** — `/apply` previews diffs and requires explicit confirmation before writing files
 - **Project scaffolding** — `/init` reads `package.json`, `pyproject.toml`, `Cargo.toml`, or `go.mod` and generates a starter `copilot-instructions.md`
 - **Configurable threshold** — adjust the auto-loaded line budget via settings
 
@@ -232,6 +245,7 @@ Faça qualquer pergunta sobre seus arquivos de contexto e obtenha análise perso
 | `@context-optimizer /audit`    | Relatório de auditoria com contagens de linhas, estimativas de tokens e custos |
 | `@context-optimizer /optimize` | Plano de otimização detalhado arquivo por arquivo                              |
 | `@context-optimizer /compare`  | Projeção antes/depois sem aplicar alterações                                   |
+| `@context-optimizer /apply`    | Mostra diffs e aplica arquivos com confirmação explícita                       |
 | `@context-optimizer /init`     | Cria arquivos de contexto a partir dos metadados do projeto                    |
 | `@context-optimizer /help`     | Mostra comandos disponíveis e uso                                              |
 
@@ -240,12 +254,15 @@ Faça qualquer pergunta sobre seus arquivos de contexto e obtenha análise perso
 | Configuração                               | Padrão | Descrição                                                                                         |
 | ------------------------------------------ | ------ | ------------------------------------------------------------------------------------------------- |
 | `contextOptimizer.autoLoadedLineThreshold` | `80`   | Máximo recomendado de linhas para arquivos auto-carregados. Arquivos que excedem disparam avisos. |
+| `contextOptimizer.maxFilesPerPattern`      | `1000` | Máximo de arquivos por padrão de varredura. Aumente em monorepos grandes.                         |
+| `contextOptimizer.excludeGlob`             | `**/{node_modules,dist,build,.git,.next,.turbo,.pnpm-store}/**` | Glob para excluir diretórios da varredura. |
 
 ## Funcionalidades
 
-- **Estimativa de tokens** — cada arquivo mostra o custo aproximado em tokens (~30 tokens/linha)
+- **Estimativa de tokens orientada por conteúdo** — projeção baseada no conteúdo real dos arquivos
 - **Detecção de similaridade** — identifica arquivos HIGH com >40% de sobreposição (coeficiente Dice)
 - **Links clicáveis** — relatório de auditoria inclui âncoras para abrir arquivos diretamente
+- **Modo de aplicação segura** — `/apply` mostra diffs e só grava após confirmação explícita
 - **Scaffolding de projeto** — `/init` lê `package.json`, `pyproject.toml`, `Cargo.toml` ou `go.mod` e gera um `copilot-instructions.md` inicial
 - **Limite configurável** — ajuste o orçamento de linhas auto-carregadas via configurações
 
@@ -372,6 +389,7 @@ Haga cualquier pregunta sobre sus archivos de contexto y obtenga análisis perso
 | `@context-optimizer /audit`    | Informe de auditoría con recuentos de líneas, estimaciones de tokens y costos |
 | `@context-optimizer /optimize` | Plan de optimización detallado archivo por archivo                            |
 | `@context-optimizer /compare`  | Proyección antes/después sin aplicar cambios                                  |
+| `@context-optimizer /apply`    | Muestra diffs y aplica archivos con confirmación explícita                    |
 | `@context-optimizer /init`     | Crea archivos de contexto desde los metadatos del proyecto                    |
 | `@context-optimizer /help`     | Muestra los comandos disponibles y su uso                                     |
 
@@ -380,12 +398,15 @@ Haga cualquier pregunta sobre sus archivos de contexto y obtenga análisis perso
 | Configuración                              | Predeterminado | Descripción                                                                                                         |
 | ------------------------------------------ | -------------- | ------------------------------------------------------------------------------------------------------------------- |
 | `contextOptimizer.autoLoadedLineThreshold` | `80`           | Líneas máximas recomendadas para archivos cargados automáticamente. Los archivos que excedan disparan advertencias. |
+| `contextOptimizer.maxFilesPerPattern`      | `1000`         | Máximo de archivos por patrón de escaneo. Útil para monorepos grandes.                                              |
+| `contextOptimizer.excludeGlob`             | `**/{node_modules,dist,build,.git,.next,.turbo,.pnpm-store}/**` | Glob para excluir directorios del escaneo. |
 
 ## Características
 
-- **Estimación de tokens** — cada archivo muestra el costo aproximado en tokens (~30 tokens/línea)
+- **Estimación de tokens orientada al contenido** — proyección basada en el contenido real de los archivos
 - **Detección de similitud** — identifica archivos HIGH con >40% de superposición (coeficiente Dice)
 - **Enlaces clicables** — el informe de auditoría incluye anclas para abrir archivos directamente
+- **Modo de aplicación segura** — `/apply` muestra diffs y solo escribe tras confirmación explícita
 - **Scaffolding de proyecto** — `/init` lee `package.json`, `pyproject.toml`, `Cargo.toml` o `go.mod` y genera un `copilot-instructions.md` inicial
 - **Umbral configurable** — ajuste el presupuesto de líneas autocargadas en la configuración
 

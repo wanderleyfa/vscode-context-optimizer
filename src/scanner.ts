@@ -1,15 +1,27 @@
 import * as vscode from "vscode";
 import { AI_CONTEXT_PATTERNS, classifyFile, type ContextFile } from "./prompts";
 
+function getScannerSettings(): { excludeGlob: string; maxFilesPerPattern: number } {
+  const config = vscode.workspace.getConfiguration("contextOptimizer");
+  return {
+    excludeGlob: config.get<string>(
+      "excludeGlob",
+      "**/{node_modules,dist,build,.git,.next,.turbo,.pnpm-store}/**",
+    ),
+    maxFilesPerPattern: config.get<number>("maxFilesPerPattern", 1000),
+  };
+}
+
 export async function discoverContextFiles(
   token?: vscode.CancellationToken,
 ): Promise<ContextFile[]> {
+  const { excludeGlob, maxFilesPerPattern } = getScannerSettings();
   const seen = new Set<string>();
 
   // Run all glob patterns in parallel
   const allUris = await Promise.all(
     AI_CONTEXT_PATTERNS.map((pattern) =>
-      vscode.workspace.findFiles(pattern, "**/node_modules/**", 100),
+      vscode.workspace.findFiles(pattern, excludeGlob, maxFilesPerPattern),
     ),
   );
 

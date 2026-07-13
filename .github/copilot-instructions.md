@@ -12,11 +12,13 @@ VS Code extension "AI Context Optimizer" — audits and optimizes AI context fil
 
 ## Architecture
 
-Three source files with clear separation:
+Core source files with clear separation:
 
 - `src/extension.ts` — Entry point, Chat Participant handler, LM integration
-- `src/scanner.ts` — File discovery via glob patterns, audit report generation
+- `src/scanner.ts` — File discovery via glob patterns
+- `src/report.ts` — Audit report generation, token estimation, similarity analysis
 - `src/prompts.ts` — System prompt, `AI_CONTEXT_PATTERNS`, file classification by cost level
+- `src/apply.ts` and `src/diff.ts` — `/apply` plan parsing, safety checks, and diff preview utilities
 
 ## Code Conventions
 
