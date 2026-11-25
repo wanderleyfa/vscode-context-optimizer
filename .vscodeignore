@@ -9,6 +9,7 @@ images/screenshot*.png
 *.vsix
 tsconfig.json
 esbuild.mjs
+eslint.config.mjs
+dist/*.map
 .gitignore
-CHANGELOG.md
 **/*.test.ts
