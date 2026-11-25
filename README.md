@@ -8,19 +8,15 @@
 
 ## What it does
 
-AI Context Optimizer is a **VS Code Chat Participant** (`@context-optimizer`) that statically analyzes AI context files across 15+ tools — GitHub Copilot, Claude Code, Gemini, Cursor, Windsurf, Aider, Continue, Cline, Amazon Q, Tabnine, Cody, Augment, Sourcery, Devin, and SpecKit. It scans the workspace for instruction, rule, and configuration files that are auto-loaded by these tools, classifies each by **loading frequency** and **token cost** (HIGH / MEDIUM / LOW / FREE), and produces an audit report with line counts. For deeper analysis, it forwards the report and file contents (truncated) to the user's configured language model to generate specific, file-by-file optimization recommendations.
+AI Context Optimizer provides **Copilot Harness Custom Agents, Agent Skills, and Language Model Tools** (plus a legacy `@context-optimizer` Chat Participant for backward compatibility) that statically analyze AI context files across 15+ tools — GitHub Copilot, Claude Code, Gemini, Cursor, Windsurf, Aider, Continue, Cline, Amazon Q, Tabnine, Cody, Augment, Sourcery, Devin, and SpecKit. It scans the workspace for instruction, rule, and configuration files that are auto-loaded by these tools, classifies each by **loading frequency** and **token cost** (HIGH / MEDIUM / LOW / FREE), and produces an audit report with line counts and token estimates.
 
-## The Problem
-
-Every AI-powered coding session starts by loading context files (`copilot-instructions.md`, `CLAUDE.md`, `GEMINI.md`, `.cursorrules`, etc.). If these files are bloated, duplicated, or poorly structured, you're paying extra tokens on **every single interaction** — before you even ask a question.
-
-## Quick Start
+## Quick Start (Copilot Harness)
 
 > **1.** Open the Copilot Chat panel (`Ctrl+Shift+I` / `⌘⇧I`)
 >
-> **2.** Type `@context-optimizer` and press Enter
+> **2.** Select the **Context Optimizer** custom agent from the agent dropdown, or invoke a skill directly with `/context-audit`, `/context-optimize`, `/context-compare`, `/context-apply`, or `/context-init`
 >
-> **3.** The extension scans your workspace and returns an audit report instantly
+> **3.** You can also reference extension tools in any prompt using `#contextAudit`, `#contextInit`, or `#contextApply` (legacy Local harness users can still use `@context-optimizer`)
 
 ### `/audit` — See What You're Spending
 
@@ -93,17 +89,17 @@ Ask anything about your context files and get tailored analysis.
 | 🟢 **LOW**    | Scoped with `applyTo`    | Tokens spent only on matching files |
 | ⚪ **FREE**   | On-demand only           | Zero cost until explicitly invoked  |
 
-## Commands
+## Skills, Tools & Commands
 
-| Command                        | What it does                                                       |
-| ------------------------------ | ------------------------------------------------------------------ |
-| `@context-optimizer`           | Scan & generate optimized files directly                           |
-| `@context-optimizer /audit`    | Read-only audit report with line counts, token estimates and costs |
-| `@context-optimizer /optimize` | Detailed file-by-file optimization plan                            |
-| `@context-optimizer /compare`  | Before/after projection without applying changes                   |
-| `@context-optimizer /apply`    | Show diffs and apply optimized files with explicit confirmation    |
-| `@context-optimizer /init`     | Scaffold context files from your project metadata                  |
-| `@context-optimizer /help`     | Show available commands and usage                                  |
+| Skill (Copilot Harness) | Tool Reference   | Legacy Participant             | What it does                                                       |
+| ----------------------- | ---------------- | ------------------------------ | ------------------------------------------------------------------ |
+| `/context-audit`        | `#contextAudit`  | `@context-optimizer /audit`    | Read-only audit report with line counts, token estimates and costs |
+| `/context-optimize`     | `#contextAudit`  | `@context-optimizer /optimize` | Detailed file-by-file optimization plan                            |
+| `/context-compare`      | `#contextAudit`  | `@context-optimizer /compare`  | Before/after projection without applying changes                   |
+| `/context-apply`        | `#contextApply`  | `@context-optimizer /apply`    | Show diffs and apply optimized files with explicit confirmation    |
+| `/context-sync`         | `#contextSync`   | `@context-optimizer /sync`     | Synchronize instructions across Copilot, Claude, Gemini & AGENTS.md |
+| `/context-init`         | `#contextInit`   | `@context-optimizer /init`     | Scaffold context files from your project metadata                  |
+| `/context-help`         | —                | `@context-optimizer /help`     | Show available commands and usage                                  |
 
 ## Settings
 
@@ -115,11 +111,14 @@ Ask anything about your context files and get tailored analysis.
 
 ## Features
 
+- **Live Status Bar, CodeLens & Problems Diagnostics** — monitor auto-loaded tokens in the status bar, see inline cost headers via CodeLens, and get real-time warnings for missing `applyTo`, `SKILL.md` folder mismatches, broken file paths, and stale npm scripts
+- **Smart `.mdc` Frontmatter Classification** — inspects Cursor `.cursor/rules/*.mdc` frontmatter (`alwaysApply`, `globs`) to distinguish global (`HIGH`) vs. scoped (`LOW`) rules
+- **Cross-Tool Synchronization (`/context-sync`)** — unifies instructions across `AGENTS.md`, `.github/copilot-instructions.md`, `CLAUDE.md`, and `.gemini/GEMINI.md`
 - **Content-aware token estimation** — token projection uses file content instead of fixed per-line multiplier
-- **Content similarity detection** — flags HIGH-cost files with >40% overlap (Dice coefficient)
+- **Content similarity & duplicate section detection** — flags HIGH-cost files with >40% overlap (Dice coefficient) or duplicate Markdown headings
 - **Clickable file links** — audit report includes anchors to open files directly
-- **Safe apply mode** — `/apply` previews diffs and requires explicit confirmation before writing files
-- **Project scaffolding** — `/init` reads `package.json`, `pyproject.toml`, `Cargo.toml`, or `go.mod` and generates a starter `copilot-instructions.md`
+- **Safe apply mode** — `/context-apply` previews diffs and requires explicit confirmation before writing files
+- **Project scaffolding** — `/context-init` reads `package.json`, `pyproject.toml`, `Cargo.toml`, or `go.mod` and generates a starter `copilot-instructions.md`
 - **Configurable threshold** — adjust the auto-loaded line budget via settings
 
 ## Example Output
@@ -237,17 +236,16 @@ Faça qualquer pergunta sobre seus arquivos de contexto e obtenha análise perso
 | 🟢 **LOW**    | Escopo com `applyTo`       | Tokens gastos apenas em arquivos correspondentes |
 | ⚪ **FREE**   | Sob demanda apenas         | Zero custo até ser explicitamente invocado       |
 
-## Comandos
+## Skills, Tools & Comandos
 
-| Comando                        | O que faz                                                                      |
-| ------------------------------ | ------------------------------------------------------------------------------ |
-| `@context-optimizer`           | Escaneia e gera arquivos otimizados diretamente                                |
-| `@context-optimizer /audit`    | Relatório de auditoria com contagens de linhas, estimativas de tokens e custos |
-| `@context-optimizer /optimize` | Plano de otimização detalhado arquivo por arquivo                              |
-| `@context-optimizer /compare`  | Projeção antes/depois sem aplicar alterações                                   |
-| `@context-optimizer /apply`    | Mostra diffs e aplica arquivos com confirmação explícita                       |
-| `@context-optimizer /init`     | Cria arquivos de contexto a partir dos metadados do projeto                    |
-| `@context-optimizer /help`     | Mostra comandos disponíveis e uso                                              |
+| Skill (Copilot Harness) | Referência Tool  | Participante Legado            | O que faz                                                                      |
+| ----------------------- | ---------------- | ------------------------------ | ------------------------------------------------------------------------------ |
+| `/context-audit`        | `#contextAudit`  | `@context-optimizer /audit`    | Relatório de auditoria com contagens de linhas, estimativas de tokens e custos |
+| `/context-optimize`     | `#contextAudit`  | `@context-optimizer /optimize` | Plano de otimização detalhado arquivo por arquivo                              |
+| `/context-compare`      | `#contextAudit`  | `@context-optimizer /compare`  | Projeção antes/depois sem aplicar alterações                                   |
+| `/context-apply`        | `#contextApply`  | `@context-optimizer /apply`    | Mostra diffs e aplica arquivos com confirmação explícita                       |
+| `/context-init`         | `#contextInit`   | `@context-optimizer /init`     | Cria arquivos de contexto a partir dos metadados do projeto                    |
+| `/context-help`         | —                | `@context-optimizer /help`     | Mostra comandos disponíveis e uso                                              |
 
 ## Configurações
 
@@ -381,17 +379,16 @@ Haga cualquier pregunta sobre sus archivos de contexto y obtenga análisis perso
 | 🟢 **LOW**    | Alcance con `applyTo`       | Tokens gastados solo en archivos coincidentes |
 | ⚪ **FREE**   | Solo bajo demanda           | Cero costo hasta ser invocado explícitamente  |
 
-## Comandos
+## Skills, Tools & Comandos (ES)
 
-| Comando                        | Qué hace                                                                      |
-| ------------------------------ | ----------------------------------------------------------------------------- |
-| `@context-optimizer`           | Escanea y genera archivos optimizados directamente                            |
-| `@context-optimizer /audit`    | Informe de auditoría con recuentos de líneas, estimaciones de tokens y costos |
-| `@context-optimizer /optimize` | Plan de optimización detallado archivo por archivo                            |
-| `@context-optimizer /compare`  | Proyección antes/después sin aplicar cambios                                  |
-| `@context-optimizer /apply`    | Muestra diffs y aplica archivos con confirmación explícita                    |
-| `@context-optimizer /init`     | Crea archivos de contexto desde los metadatos del proyecto                    |
-| `@context-optimizer /help`     | Muestra los comandos disponibles y su uso                                     |
+| Skill (Copilot Harness) | Referencia Tool  | Participante Legado            | Qué hace                                                                      |
+| ----------------------- | ---------------- | ------------------------------ | ----------------------------------------------------------------------------- |
+| `/context-audit`        | `#contextAudit`  | `@context-optimizer /audit`    | Informe de auditoría con recuentos de líneas, estimaciones de tokens y costos |
+| `/context-optimize`     | `#contextAudit`  | `@context-optimizer /optimize` | Plan de optimización detallado archivo por archivo                            |
+| `/context-compare`      | `#contextAudit`  | `@context-optimizer /compare`  | Proyección antes/después sin aplicar cambios                                  |
+| `/context-apply`        | `#contextApply`  | `@context-optimizer /apply`    | Muestra diffs y aplica archivos con confirmación explícita                    |
+| `/context-init`         | `#contextInit`   | `@context-optimizer /init`     | Crea archivos de contexto desde los metadatos del proyecto                    |
+| `/context-help`         | —                | `@context-optimizer /help`     | Muestra los comandos disponibles y su uso                                     |
 
 ## Configuración
 

@@ -1,9 +1,25 @@
 # Changelog
 
-## [Unreleased]
+## [0.4.0] - 2026-11-25
 
 ### Added
 
+- **Copilot Harness Support (Chat Participant Replacement)**:
+  - Contributed **Language Model Tools** (`contributes.languageModelTools`):
+    - `context-optimizer_audit` (`#contextAudit`) — scans workspace AI context files, estimates tokens, detects similarity & lint issues, and optionally returns HIGH/MEDIUM contents
+    - `context-optimizer_init` (`#contextInit`) — scaffolds `.github/copilot-instructions.md` from project metadata
+    - `context-optimizer_apply` (`#contextApply`) — two-step diff preview and confirmed file write with SHA-256 conflict detection
+    - `context-optimizer_sync` (`#contextSync`) — synchronizes instructions across `AGENTS.md`, `.github/copilot-instructions.md`, `CLAUDE.md` (`@AGENTS.md` pointer), and `.gemini/GEMINI.md`
+  - Contributed **Custom Agent** (`contributes.chatAgents` -> `agents/context-optimizer.agent.md`) for an ongoing Context Optimizer specialist role in Copilot Chat
+  - Contributed **Agent Skills** (`contributes.chatSkills` -> `skills/*/SKILL.md`) for `/context-audit`, `/context-optimize`, `/context-compare`, `/context-apply`, `/context-sync`, `/context-init`, and `/context-help`
+- **Live Editor Integrations (Outside Chat)**:
+  - **Status Bar Indicator** — displays real-time auto-loaded line and token metrics with warning highlight when exceeding threshold
+  - **VS Code Problems Diagnostics (`src/linter.ts`)** — detects missing `applyTo` frontmatter in `.instructions.md`, `SKILL.md` folder name mismatches, broken file path references, non-existent npm scripts, and cross-file duplicate headings
+  - **CodeLens Provider** — displays inline token cost, tool name, and loading behavior at the top of every AI context file
+  - **Command Palette Commands** — `AI Context Optimizer: Show Audit Report`, `AI Context Optimizer: Initialize Copilot Instructions`, and `AI Context Optimizer: Synchronize AI Context Files`
+- **Expanded AI Tool & Smart Classification Support**:
+  - Smart frontmatter parsing for Cursor `.cursor/rules/*.mdc` (`alwaysApply: false` + `globs` classified as `LOW` instead of `HIGH`)
+  - Added support for **Roo Code** (`.roorules`, `.roo/rules/*.md`), **Kilo Code** (`.kilocode/rules/*.md`), **Windsurf rules** (`.windsurf/rules/*.md`), and cross-agent skill directories (`.agents/skills/**/SKILL.md`, `.claude/skills/**/SKILL.md`)
 - `/apply` command with two-step flow: preview diffs first, then apply only after explicit confirmation (`/apply confirm`)
 - New apply utilities (`src/apply.ts`) and diff preview engine (`src/diff.ts`)
 - New tests for apply plan parsing, confirmation flow, and diff generation
@@ -14,8 +30,9 @@
 
 ### Changed
 
+- Retained legacy `@context-optimizer` Chat Participant for backward compatibility with the Local harness while supporting the new Copilot harness natively
 - Token estimation now uses content-aware heuristic instead of fixed tokens-per-line multiplier
-- `/help` and README command/settings docs updated to include `/apply` and scan scaling settings
+- `/help` and README command/settings docs updated to include skills, `#context*` tool references, `/apply`, and scan scaling settings
 
 ## [0.3.0] - 2025-06-23
 

@@ -1,0 +1,21 @@
+{
+  "extension.description": "Audite, valide, sincronice y optimice archivos de contexto de IA (copilot-instructions, CLAUDE.md, GEMINI.md, etc.) para reducir el consumo de tokens.",
+  "command.showAuditReport": "AI Context Optimizer: Mostrar Informe de Auditoría",
+  "command.initInstructions": "AI Context Optimizer: Inicializar Copilot Instructions",
+  "command.syncTools": "AI Context Optimizer: Sincronizar Archivos de Contexto de IA",
+  "config.threshold": "Líneas máximas recomendadas para archivos de contexto autocargados. Los archivos que excedan este límite generan advertencias.",
+  "config.maxFiles": "Máximo de archivos por patrón de búsqueda durante el escaneo. Aumente para monorepos grandes.",
+  "config.excludeGlob": "Patrón glob utilizado para excluir directorios del escaneo.",
+  "tool.audit.displayName": "Auditar Archivos de Contexto de IA",
+  "tool.init.displayName": "Inicializar Copilot Instructions",
+  "tool.apply.displayName": "Previsualizar o Aplicar Archivos de Contexto Optimizados",
+  "tool.sync.displayName": "Sincronizar Archivos de Contexto Entre Herramientas",
+  "participant.description": "Audite y optimice archivos de contexto de IA para reducir el consumo de tokens.",
+  "cmd.audit": "Auditar todos los archivos de contexto de IA e informar costos de tokens (solo lectura)",
+  "cmd.optimize": "Auditar e implementar todas las optimizaciones",
+  "cmd.compare": "Mostrar proyección antes/después sin aplicar cambios",
+  "cmd.apply": "Previsualizar y aplicar cambios optimizados con confirmación",
+  "cmd.sync": "Sincronizar instrucciones entre Copilot, Claude, Gemini y AGENTS.md",
+  "cmd.help": "Mostrar comandos disponibles y uso",
+  "cmd.init": "Crear archivos de contexto optimizados desde los metadatos del proyecto"
+}

@@ -1,3 +1,5 @@
+import { parseFrontmatter } from "./linter";
+
 export const SYSTEM_PROMPT = `You are a **Context Optimization Specialist**. Your job is to audit, measure, and optimize AI context files in any repository to minimize token consumption while preserving all essential information.
 
 Always respond in the user's language (detect from their message or from existing context files).
@@ -20,8 +22,11 @@ AI assistants (Copilot, Gemini, Claude Code) auto-load context files every sessi
 | CLAUDE.md / .claude/CLAUDE.md | Every Claude Code session | HIGH |
 | MEMORY.md | Every Claude Code session | HIGH |
 | hooks.json | Every matching event | MEDIUM-HIGH |
-| .cursorrules / .cursor/rules/*.mdc | Every Cursor interaction | HIGH |
-| .windsurfrules | Every Windsurf interaction | HIGH |
+| .cursorrules / .cursor/rules/*.mdc (alwaysApply) | Every Cursor interaction | HIGH |
+| .cursor/rules/*.mdc (scoped globs) | Only matching files | LOW |
+| .windsurfrules / .windsurf/rules/*.md | Every Windsurf interaction | HIGH |
+| .roorules / .roo/rules/*.md | Every Roo Code interaction | HIGH |
+| .kilocode/rules/*.md | Every Kilo Code interaction | HIGH |
 | .aider.conf.yml / .aiderignore | Every Aider session | HIGH |
 | .continue/config.json / .continuerules | Every Continue session | HIGH |
 | .clinerules / .cline/settings.json | Every Cline interaction | HIGH |
@@ -72,6 +77,7 @@ export const AI_CONTEXT_PATTERNS = [
   "**/copilot-instructions.md",
   "**/.instructions.md",
   ".github/agents/*.agent.md",
+  "agents/*.agent.md",
   ".github/prompts/*.prompt.md",
   ".github/instructions/*.instructions.md",
   // Claude Code
@@ -81,6 +87,7 @@ export const AI_CONTEXT_PATTERNS = [
   "AGENTS.md",
   "MEMORY.md",
   ".claude/hooks.json",
+  ".claude/skills/**/SKILL.md",
   // Gemini
   ".gemini/GEMINI.md",
   ".gemini/settings.json",
@@ -90,6 +97,12 @@ export const AI_CONTEXT_PATTERNS = [
   ".cursor/rules/*.mdc",
   // Windsurf (Codeium)
   ".windsurfrules",
+  ".windsurf/rules/*.md",
+  // Roo Code
+  ".roorules",
+  ".roo/rules/*.md",
+  // Kilo Code
+  ".kilocode/rules/*.md",
   // Aider
   ".aider.conf.yml",
   ".aiderignore",
@@ -119,9 +132,15 @@ export const AI_CONTEXT_PATTERNS = [
   // SpecKit
   ".specify/memory/constitution.md",
   ".specify/templates/*.md",
-  // Other
+  // MCP (Model Context Protocol)
+  ".vscode/mcp.json",
+  ".cursor/mcp.json",
+  ".mcp.json",
+  // Skills (Cross-agent standard)
   "SKILL.md",
   ".github/skills/**/SKILL.md",
+  ".agents/skills/**/SKILL.md",
+  "skills/**/SKILL.md",
 ];
 
 export type CostLevel = "HIGH" | "MEDIUM" | "LOW" | "FREE";
@@ -135,12 +154,38 @@ export interface ContextFile {
   loading: string;
 }
 
-export function classifyFile(relativePath: string): {
+export function classifyFile(
+  relativePath: string,
+  content?: string,
+): {
   cost: CostLevel;
   tool: string;
   loading: string;
 } {
   const p = relativePath.toLowerCase();
+
+  // Smart Cursor .mdc classification based on frontmatter
+  if (p.startsWith(".cursor/rules") && p.endsWith(".mdc") && content) {
+    const fm = parseFrontmatter(content);
+    if (fm) {
+      const alwaysApply = fm.fields.alwaysApply?.toLowerCase();
+      const hasGlobs = Boolean(fm.fields.globs && fm.fields.globs.trim().length > 0);
+      if (alwaysApply === "false" && hasGlobs) {
+        return {
+          cost: "LOW",
+          tool: "Cursor",
+          loading: "Only matching files (globs)",
+        };
+      }
+      if (alwaysApply === "false" && !hasGlobs) {
+        return {
+          cost: "FREE",
+          tool: "Cursor",
+          loading: "Agent requested (on-demand)",
+        };
+      }
+    }
+  }
 
   // HIGH — auto-loaded every interaction
   if (p === ".github/copilot-instructions.md")
@@ -159,8 +204,12 @@ export function classifyFile(relativePath: string): {
     };
   if (p === ".cursorrules" || p.startsWith(".cursor/rules"))
     return { cost: "HIGH", tool: "Cursor", loading: "Every interaction" };
-  if (p === ".windsurfrules")
+  if (p === ".windsurfrules" || p.startsWith(".windsurf/rules"))
     return { cost: "HIGH", tool: "Windsurf", loading: "Every interaction" };
+  if (p === ".roorules" || p.startsWith(".roo/rules"))
+    return { cost: "HIGH", tool: "Roo Code", loading: "Every interaction" };
+  if (p.startsWith(".kilocode/rules"))
+    return { cost: "HIGH", tool: "Kilo Code", loading: "Every interaction" };
   if (p === ".aider.conf.yml")
     return { cost: "HIGH", tool: "Aider", loading: "Every session" };
   if (p === ".aiderignore")
@@ -195,6 +244,16 @@ export function classifyFile(relativePath: string): {
     return { cost: "MEDIUM", tool: "Claude Code", loading: "Settings only" };
 
   // MEDIUM
+  if (
+    p === ".vscode/mcp.json" ||
+    p === ".cursor/mcp.json" ||
+    p === ".mcp.json"
+  )
+    return {
+      cost: "MEDIUM",
+      tool: "MCP",
+      loading: "Tool schemas loaded in agent mode",
+    };
   if (p === ".github/agents/copilot-instructions.md")
     return { cost: "MEDIUM", tool: "Copilot", loading: "Agent mode only" };
   if (p.includes("hooks.json"))

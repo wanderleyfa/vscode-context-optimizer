@@ -1,0 +1,21 @@
+{
+  "extension.description": "Audit, lint, synchronize, and optimize AI context files (copilot-instructions, CLAUDE.md, GEMINI.md, etc.) to reduce token consumption.",
+  "command.showAuditReport": "AI Context Optimizer: Show Audit Report",
+  "command.initInstructions": "AI Context Optimizer: Initialize Copilot Instructions",
+  "command.syncTools": "AI Context Optimizer: Synchronize AI Context Files",
+  "config.threshold": "Maximum recommended lines for auto-loaded context files. Files exceeding this trigger optimization warnings.",
+  "config.maxFiles": "Maximum files to match per context pattern during scan. Increase for very large monorepos.",
+  "config.excludeGlob": "Glob pattern used to exclude directories from scans.",
+  "tool.audit.displayName": "Audit AI Context Files",
+  "tool.init.displayName": "Initialize Copilot Instructions",
+  "tool.apply.displayName": "Preview or Apply Optimized Context Files",
+  "tool.sync.displayName": "Synchronize AI Context Files Across Tools",
+  "participant.description": "Audit and optimize AI context files to reduce token consumption. Use when: context audit, optimize copilot instructions, reduce tokens, compact instructions, deduplicate context.",
+  "cmd.audit": "Audit all AI context files and report token costs (read-only)",
+  "cmd.optimize": "Audit and implement all optimizations",
+  "cmd.compare": "Show before/after projection without applying changes",
+  "cmd.apply": "Preview and apply optimized file changes with confirmation",
+  "cmd.sync": "Synchronize instructions across Copilot, Claude, Gemini and AGENTS.md",
+  "cmd.help": "Show available commands and usage",
+  "cmd.init": "Scaffold optimized context files from your project metadata"
+}

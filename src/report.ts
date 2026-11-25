@@ -1,3 +1,9 @@
+import { getMessages } from "./i18n";
+import {
+  findDuplicateHeadings,
+  lintContextFiles,
+  type ContextLintIssue,
+} from "./linter";
 import type { ContextFile } from "./prompts";
 
 const CHARS_PER_TOKEN = 4;
@@ -72,7 +78,13 @@ export function findDuplicates(
   return pairs.sort((a, b) => b.percent - a.percent);
 }
 
-export function buildAuditReport(files: ContextFile[], threshold = 80): string {
+export function buildAuditReport(
+  files: ContextFile[],
+  threshold = 80,
+  lintIssues?: ContextLintIssue[],
+  locale?: string,
+): string {
+  const msg = getMessages(locale);
   const tokenByPath = new Map(
     files.map((f) => [f.path, estimateTokens(f.lines, f.content)]),
   );
@@ -111,17 +123,17 @@ export function buildAuditReport(files: ContextFile[], threshold = 80): string {
     0,
   );
 
-  let report = `## AI Context Audit Report\n\n`;
-  report += `### Summary\n`;
-  report += `| Metric | Lines | ~Tokens |\n|---|---|---|\n`;
-  report += `| **AUTO-LOADED (every session)** | **${totalAutoLoaded}** | **~${totalAutoLoadedTokens.toLocaleString()}** |\n`;
-  report += `| Medium (conditional) | ${totalMedium} | ~${totalMediumTokens.toLocaleString()} |\n`;
-  report += `| Scoped (applyTo) | ${totalScoped} | ~${totalScopedTokens.toLocaleString()} |\n`;
-  report += `| Lazy (on-demand) | ${totalLazy} | ~${totalLazyTokens.toLocaleString()} |\n`;
-  report += `| **Total** | **${totalAll}** | **~${totalAllTokens.toLocaleString()}** |\n\n`;
+  let report = `## ${msg.auditTitle}\n\n`;
+  report += `### ${msg.summaryTitle}\n`;
+  report += `| ${msg.metricCol} | ${msg.linesCol} | ${msg.tokensCol} |\n|---|---|---|\n`;
+  report += `| **${msg.autoLoadedRow}** | **${totalAutoLoaded}** | **~${totalAutoLoadedTokens.toLocaleString()}** |\n`;
+  report += `| ${msg.mediumRow} | ${totalMedium} | ~${totalMediumTokens.toLocaleString()} |\n`;
+  report += `| ${msg.scopedRow} | ${totalScoped} | ~${totalScopedTokens.toLocaleString()} |\n`;
+  report += `| ${msg.lazyRow} | ${totalLazy} | ~${totalLazyTokens.toLocaleString()} |\n`;
+  report += `| **${msg.totalRow}** | **${totalAll}** | **~${totalAllTokens.toLocaleString()}** |\n\n`;
 
-  report += `### Inventory\n\n`;
-  report += `| File | Lines | ~Tokens | Cost | Tool | Loading |\n`;
+  report += `### ${msg.inventoryTitle}\n\n`;
+  report += `| ${msg.fileCol} | ${msg.linesCol} | ${msg.tokensCol} | ${msg.costCol} | ${msg.toolCol} | ${msg.loadingCol} |\n`;
   report += `|------|-------|---------|------|------|---------|\n`;
   for (const f of files) {
     const icon =
@@ -136,26 +148,57 @@ export function buildAuditReport(files: ContextFile[], threshold = 80): string {
   }
 
   if (totalAutoLoaded > threshold) {
-    report += `\n### ⚠️ Recommendations\n\n`;
-    report += `1. **Compact global file** — ${totalAutoLoaded} auto-loaded lines (~${totalAutoLoadedTokens.toLocaleString()} tokens) exceeds the ~${threshold}-line target. Move details to scoped \`.instructions.md\` files.\n`;
+    report += `\n### ${msg.recommendationsTitle}\n\n`;
+    report += msg.compactGlobalRec(
+      totalAutoLoaded,
+      totalAutoLoadedTokens.toLocaleString(),
+      threshold,
+    );
 
     const highFiles = files.filter((f) => f.cost === "HIGH");
     if (highFiles.length > 1) {
-      report += `2. **Deduplicate** — ${highFiles.length} HIGH-cost files detected. Check for overlapping content between: ${highFiles.map((f) => f.path).join(", ")}.\n`;
+      report += msg.deduplicateRec(
+        highFiles.length,
+        highFiles.map((f) => f.path).join(", "),
+      );
     }
 
     const dupes = findDuplicates(files);
     if (dupes.length > 0) {
-      report += `\n### 🔁 Content Similarity\n\n`;
-      report += `| File A | File B | Similarity |\n|--------|--------|------------|\n`;
+      report += `\n### ${msg.similarityTitle}\n\n`;
+      report += `| ${msg.fileACol} | ${msg.fileBCol} | ${msg.similarityCol} |\n|--------|--------|------------|\n`;
       for (const d of dupes) {
         report += `| ${d.fileA} | ${d.fileB} | ${d.percent}% |\n`;
       }
-      report += `\n> Files with high similarity likely contain duplicated instructions. Consider creating a single source of truth.\n`;
+      report += `\n${msg.similarityNote}\n`;
     }
   } else {
-    report += `\n### ✅ Context is well-optimized\n\n`;
-    report += `Auto-loaded context (${totalAutoLoaded} lines, ~${totalAutoLoadedTokens.toLocaleString()} tokens) is within the ~${threshold}-line target.\n`;
+    report += `\n### ${msg.wellOptimizedTitle}\n\n`;
+    report += `${msg.wellOptimizedBody(
+      totalAutoLoaded,
+      totalAutoLoadedTokens.toLocaleString(),
+      threshold,
+    )}\n`;
+  }
+
+  const dupeHeadings = findDuplicateHeadings(files);
+  if (dupeHeadings.length > 0) {
+    report += `\n### ${msg.duplicateSectionsTitle}\n\n`;
+    report += `| ${msg.headingCol} | ${msg.filesCol} |\n|---|---|\n`;
+    for (const h of dupeHeadings) {
+      report += `| \`## ${h.heading}\` | ${h.files.join(", ")} |\n`;
+    }
+  }
+
+  const issues = lintIssues ?? lintContextFiles(files, { threshold, locale });
+  const actionableIssues = issues.filter(
+    (i) => i.code !== "THRESHOLD_EXCEEDED" && i.code !== "DUPLICATE_HEADING",
+  );
+  if (actionableIssues.length > 0) {
+    report += `\n### ${msg.lintWarningsTitle}\n\n`;
+    for (const issue of actionableIssues) {
+      report += `- **${issue.file}:${issue.line}** (\`${issue.code}\`) — ${issue.message}\n`;
+    }
   }
 
   return report;
@@ -165,16 +208,27 @@ export function getModeInstruction(
   command: string | undefined,
   userPrompt: string,
   threshold: number,
+  locale?: string,
 ): string {
+  const langNote = locale
+    ? `\n\nIMPORTANT: Respond in the user's VS Code display language (${locale}).`
+    : "";
   switch (command) {
     case "optimize":
-      return `Analyze the audit report and provide SPECIFIC file-by-file optimization recommendations. For each HIGH-cost file over ${threshold} lines, show exactly what sections to extract into scoped .instructions.md files with applyTo patterns. Show the projected before/after line counts.`;
-    case "compare":
-      return `Show a detailed before/after comparison of what the optimized files would look like. Include projected line counts and reduction percentages. Do NOT actually make changes. Target: under ${threshold} auto-loaded lines.`;
-    default:
       return (
-        userPrompt ||
-        `Analyze the audit report and GENERATE the optimized file contents directly. For each HIGH-cost file over ${threshold} lines, produce the compacted version AND the extracted scoped .instructions.md files with applyTo patterns. Show the complete file contents ready to apply, with before/after line counts. Be concrete — output the actual optimized files, not just suggestions.`
+        `Analyze the audit report and provide SPECIFIC file-by-file optimization recommendations. For each HIGH-cost file over ${threshold} lines, show exactly what sections to extract into scoped .instructions.md files with applyTo patterns. Show the projected before/after line counts.` +
+        langNote
+      );
+    case "compare":
+      return (
+        `Show a detailed before/after comparison of what the optimized files would look like. Include projected line counts and reduction percentages. Do NOT actually make changes. Target: under ${threshold} auto-loaded lines.` +
+        langNote
+      );
+    default:
+      if (userPrompt) return userPrompt;
+      return (
+        `Analyze the audit report and GENERATE the optimized file contents directly. For each HIGH-cost file over ${threshold} lines, produce the compacted version AND the extracted scoped .instructions.md files with applyTo patterns. Show the complete file contents ready to apply, with before/after line counts. Be concrete — output the actual optimized files, not just suggestions.` +
+        langNote
       );
   }
 }

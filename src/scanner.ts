@@ -46,7 +46,7 @@ export async function discoverContextFiles(
       const content = Buffer.from(raw).toString("utf-8");
       const lines = content.split("\n").length;
       const rel = vscode.workspace.asRelativePath(uri);
-      const classification = classifyFile(rel);
+      const classification = classifyFile(rel, content);
       return { path: rel, lines, content, ...classification };
     }),
   );
